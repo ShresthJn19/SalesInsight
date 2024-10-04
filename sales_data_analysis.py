@@ -1,10 +1,11 @@
+# import all dependencies
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.ensemble import IsolationForest
 import streamlit as st
 
-# Function to load the dataset
+# Function to load dataset
 def load_data(file):
     try:
         df = pd.read_csv(file)
@@ -12,19 +13,20 @@ def load_data(file):
         df = pd.read_excel(file)
     return df
 
-# Function to clean the dataset
+# Function to clean dataset
 def clean_data(df):
-    # Drop unnecessary or unnamed columns
+    # Drop unnamed columns (headers)
     df = df.loc[:, ~df.columns.str.contains('^Unnamed')]
     
-    # Check for missing values and handle them
-    df = df.dropna(subset=['Amount', 'Date', 'Qty'])  # Drop rows with essential missing values
+    # Check for missing values in rows
+    # Drop rows with essential missing values
+    df = df.dropna(subset=['Amount', 'Date', 'Qty'])  
     
-    # Parse Date column
+    # detect date column
     df['Date'] = pd.to_datetime(df['Date'], errors='coerce')
     
-    # Fill missing values (optional)
-    df.fillna(method='ffill', inplace=True)  # Forward fill as an example
+    # Fill missing values
+    df.fillna(method='ffill', inplace=True)
     
     # Ensure correct data types
     df['Amount'] = pd.to_numeric(df['Amount'], errors='coerce')
@@ -32,7 +34,7 @@ def clean_data(df):
     
     return df
 
-# Function to generate basic visualizations
+# Function to generate visualizations
 def visualize_sales_over_time(df):
     plt.figure(figsize=(10, 5))
     df.groupby('Date')['Amount'].sum().plot(kind='line')
@@ -47,32 +49,32 @@ def visualize_sales_by_category(df):
     plt.title('Sales by Category')
     plt.xlabel('Category')
     plt.ylabel('Sales Count')
-    plt.xticks(rotation=45)
+    plt.xticks(rotation=45) # rotates font
     st.pyplot(plt)
 
 def visualize_sales_by_state(df):
-    plt.figure(figsize=(10, 8))  # Adjusted the figure size for better visualization
+    plt.figure(figsize=(10, 8))
     sns.countplot(y=df['ship-state'], order=df['ship-state'].value_counts().index)
     plt.title('Sales by State')
     plt.xlabel('Count')
     plt.ylabel('State')
-    plt.yticks(rotation=0, fontsize=10)  # Make sure y-axis labels are horizontal with proper font size
-    plt.tight_layout()  # Ensures everything fits without overlap
+    plt.yticks(rotation=0, fontsize=10)
+    plt.tight_layout() # avoid overlapping
     st.pyplot(plt)
 
 def visualize_order_status(df):
-    plt.figure(figsize=(10, 6))  # Increased figure size for better visualization
+    plt.figure(figsize=(10, 6))
     sns.countplot(x=df['Status'])
     plt.title('Order Status Summary')
     plt.xlabel('Order Status')
     plt.ylabel('Count')
-    plt.xticks(rotation=45, ha='right', fontsize=10)  # Rotate x-axis labels and align them to the right
-    plt.tight_layout()  # Adjust layout to prevent overlap
+    plt.xticks(rotation=45, ha='right', fontsize=10)
+    plt.tight_layout()
     st.pyplot(plt)
 
-# Function for anomaly detection using Isolation Forest (optional)
+# Function for anomaly detection (outliers)
 def detect_anomalies(df):
-    model = IsolationForest(contamination=0.01)
+    model = IsolationForest(contamination=0.01) # contamination=0.01 meaning 1% of the data is expected to be outliers
     df['anomaly'] = model.fit_predict(df[['Amount']])
     
     anomalies = df[df['anomaly'] == -1]
@@ -88,7 +90,7 @@ def detect_anomalies(df):
 
     return anomalies
 
-# Main function that ties everything together
+# Main function
 def process_sales_data(file):
     # Load and clean the data
     df = load_data(file)
@@ -100,7 +102,7 @@ def process_sales_data(file):
         ("Total Sales Over Time", "Sales by Category", "Sales by State", "Order Status Summary", "Anomaly Detection")
     )
     
-    # Perform the visualizations based on user selection
+    # Perform visualization based on user selection
     if graph_option == "Total Sales Over Time":
         visualize_sales_over_time(df)
     elif graph_option == "Sales by Category":
