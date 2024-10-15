@@ -3,7 +3,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 from datetime import datetime
-from database import validate_user, register_user, log_analysis  # Import new functions from database.py
+from database import validate_user, register_user, log_analysis
 
 # Custom styling
 def add_custom_style():
