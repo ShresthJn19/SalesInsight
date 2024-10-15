@@ -3,7 +3,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 from datetime import datetime
-from database import validate_user, register_user, log_analysis
+from database import validate_user, register_user, log_analysis  # Import new functions from database.py
 
 # Custom styling
 def add_custom_style():
@@ -12,8 +12,20 @@ def add_custom_style():
         .main {background-color: #f0f2f6; font-family: 'Roboto', sans-serif;}
         h1, h2, h3 {color: #4B7BEC;}
         .stButton button {background-color: #4B7BEC; color: white;}
+        .top-right {position: absolute; top: 15px; right: 15px;}
         </style>
         """, unsafe_allow_html=True)
+
+# Logout button styled to be top-right
+def logout():
+    logout_html = """
+        <div class="top-right">
+            <form action="/" method="get">
+                <button type="submit" class="stButton">Logout</button>
+            </form>
+        </div>
+    """
+    st.markdown(logout_html, unsafe_allow_html=True)
 
 # Register new user
 def register():
@@ -41,22 +53,15 @@ def login():
     password = st.text_input('Password', type='password')
 
     if st.button('Login'):
-        if validate_user(username, password):  # Using validate_user from database.py
+        if validate_user(username, password):
             st.session_state['logged_in'] = True
             st.session_state['username'] = username
             st.session_state['page'] = 'upload'
         else:
             st.error('Invalid username or password')
 
-    # Link to registration page
     if st.button('Create a New Account'):
         st.session_state['page'] = 'register'
-
-# Logout function
-def logout():
-    if st.button('Logout'):
-        st.session_state['logged_in'] = False
-        st.session_state['page'] = 'login'
 
 # Upload instructions
 def upload_instructions():
@@ -97,9 +102,29 @@ def display_kpis(df):
     # Log analysis to the database
     log_analysis(st.session_state['username'], total_rows, num_products, num_states)
 
+# Apply filters
+def apply_filters(df):
+    st.write("### Filter Options")
+
+    # Date filter
+    date_min = df['Date'].min()
+    date_max = df['Date'].max()
+    start_date, end_date = st.date_input('Select Date Range', [date_min, date_max])
+
+    # State-wise filter
+    states = df['ship-state'].unique()
+    selected_states = st.multiselect('Filter by State', states, default=states)
+
+    # Apply filters
+    df_filtered = df[(df['Date'] >= pd.to_datetime(start_date)) & (df['Date'] <= pd.to_datetime(end_date))]
+    df_filtered = df_filtered[df_filtered['ship-state'].isin(selected_states)]
+
+    return df_filtered
+
 # Function to visualize the data
 def visualize_data(df):
     st.write("## Sales Data Analysis")
+
     # Total Sales Over Time
     plt.figure(figsize=(10, 5))
     df.groupby('Date')['Amount'].sum().plot(kind='line')
@@ -141,8 +166,14 @@ def dashboard_page():
     st.title('📊 Dashboard')
     if 'df' in st.session_state:
         df = st.session_state['df']
-        display_kpis(df)
-        visualize_data(df)
+
+        # Apply filters
+        df_filtered = apply_filters(df)
+
+        # Display KPIs and visualizations
+        display_kpis(df_filtered)
+        visualize_data(df_filtered)
+
     logout()
 
 # Main app function
